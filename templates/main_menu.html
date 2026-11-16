@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block full_workspace %}
+<!-- Кнопка звука сбоку на главном экране -->
+<button type="button" class="mc-btn side-sound-btn sound-toggle-btn" onclick="toggleSound()">Звук: ВКЛ</button>
+
+<!-- Центральное меню: ровно 4 основные кнопки без левой панели и без иконок -->
+<div class="game-menu-box">
+    <h1 class="game-menu-title">Мои DIY-инструкции</h1>
+    <div class="game-menu-sub">Инструкций в вашем инвентаре: {{ total_inst }}</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div style="margin-bottom: 14px; text-align: left;">
+                {% for category, msg in messages %}
+                    <div class="flash-box {{ 'flash-error' if category == 'error' else 'flash-success' }}">
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="game-menu-buttons">
+        <a href="{{ url_for('create_instruction') }}" class="mc-btn green game-menu-btn">Новый крафт</a>
+        <a href="{{ url_for('inventory') }}" class="mc-btn game-menu-btn">Просмотр инструкций</a>
+        <button type="button" class="mc-btn game-menu-btn" onclick="openOnboardingModal()">Как пользоваться</button>
+        <form method="POST" action="{{ url_for('logout') }}" style="width: 100%; margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="mc-btn red game-menu-btn">Выход</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+    <h1 style="font-size:38px;">Импорт готовой инструкции</h1>
+    <a href="{{ url_for('inventory') }}" class="mc-btn mc-btn-equal">← Назад в инвентарь</a>
+</div>
+
+<p style="margin-bottom:18px; font-size:20px; color:#333;">
+    Вы можете добавить инструкцию двумя способами: указать веб-ссылку на страницу с инструкцией (включая PHP-просмотрщики буклетов) или загрузить файл с компьютера в формате <b>.PDF</b>, <b>.JSON</b> или <b>.TXT</b>.
+</p>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:22px; width:100%;">
+    <!-- СПОСОБ 1: ИМПОРТ ПО ВЕБ-ССЫЛКЕ (URL / PHP) -->
+    <div style="background:#b4b4b4; border:3px solid #333; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+            <h2 style="font-size:30px; margin-bottom:10px; color:#1f4e78;">1. Импорт по веб-ссылке (URL)</h2>
+            <p style="margin-bottom:14px; font-size:19px;">
+                Система автоматически извлечёт название, описание, обложку и все листы или встроенный PDF-буклет со страницы инструкции.
+            </p>
+            <form method="POST" style="width:100%;" onsubmit="return handleCraftImportSubmit(event, this, 'Идет анализ страницы, скачивание обложки и листов инструкции...');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="import_type" value="url">
+
+                <label style="display:block; margin-bottom:6px;"><b>URL страницы с инструкцией:</b></label>
+                <input type="url" name="url" class="mc-input"
+                       placeholder="https://example.com/instructions/project.html"
+                       required style="margin-bottom:14px;">
+
+                <button type="submit" class="mc-btn green" style="width:100%; height:46px; font-size:22px;">Собрать инструкцию по ссылке</button>
+            </form>
+        </div>
+
+        <div style="margin-top:16px; background:#d4d4d4; border:2px dashed #444; padding:10px 12px; font-size:17px;">
+            <b>Поддерживаемые источники:</b><br>
+            • Страницы каталогов с листами и схемами сборки<br>
+            • Статьи и DIY-руководства с пошаговыми списками
+        </div>
+    </div>
+
+    <!-- СПОСОБ 2: ИМПОРТ ИЗ ФАЙЛА (.PDF / .JSON / .TXT) -->
+    <div style="background:#b4b4b4; border:3px solid #333; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+            <h2 style="font-size:30px; margin-bottom:10px; color:#274e13;">2. Импорт из файла (.PDF / .JSON / .TXT)</h2>
+            <p style="margin-bottom:14px; font-size:19px;">
+                Загрузите готовый файл с компьютера — система автоматически создаст карточку инструкции, обложку и пошаговые этапы сборки.
+            </p>
+            <form method="POST" enctype="multipart/form-data" style="width:100%;" onsubmit="return handleCraftImportSubmit(event, this, 'Идет чтение файла и создание этапов инструкции...');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="import_type" value="file">
+
+                <label style="display:block; margin-bottom:6px;"><b>Выберите файл (.pdf, .json или .txt):</b></label>
+                <input type="file" name="import_file" class="mc-input" accept=".pdf,.json,.txt" required style="margin-bottom:14px;">
+
+                <button type="submit" class="mc-btn green" style="width:100%; height:46px; font-size:22px;">Загрузить и создать инструкцию</button>
+            </form>
+        </div>
+
+        <div style="margin-top:16px; background:#d4d4d4; border:2px dashed #444; padding:10px 12px; font-size:17px;">
+            <b>Как обрабатываются файлы:</b><br>
+            • <code>.PDF</code> — 1-я страница становится обложкой, остальные — этапами с фото.<br>
+            • <code>.JSON</code> — импорт названия, материалов, инструментов, тегов и шагов.<br>
+            • <code>.TXT</code> — первая строка становится названием, остальные — этапами.
+        </div>
+    </div>
+</div>
+
+<!-- Пиксельное окно загрузки с прогресс-баром и отменой -->
+<div id="mc-loading-backdrop" class="craft-loading-overlay" style="display:none;">
+    <div class="craft-loading-box">
+        <div class="pixel-spinner"></div>
+        <h2 style="font-size:32px; margin-bottom:8px;">Крафтим инструкцию...</h2>
+        <p id="mc-loading-status" style="font-size:20px; color:#333; margin-bottom:12px;">
+            Идёт обработка страниц документа...
+        </p>
+
+        <!-- Прогресс-бар загрузки и обработки -->
+        <div class="progress-outer" style="margin-bottom:10px;">
+            <div id="mc-loading-progress-bar" class="progress-inner" style="width:0%;"></div>
+            <div id="mc-loading-progress-label" class="progress-label">0%</div>
+        </div>
+
+        <p style="font-size:17px; color:#555; margin-bottom:16px;">
+            Для объёмных PDF-документов (50–80 стр.) это может занять 15–40 секунд.
+        </p>
+
+        <button type="button" class="mc-btn red" style="width:100%; height:44px;" onclick="cancelCraftLoading()">
+            Отмена
+        </button>
+    </div>
+</div>
+{% endblock %}

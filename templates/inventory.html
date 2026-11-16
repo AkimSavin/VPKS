@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+    <div>
+        <h1 style="font-size: 38px;">Инвентарь ({{ instructions|length }})</h1>
+        <small style="color:#444;">Навигация: <b>WASD / Стрелки / Мышь</b>, открыть выбранный слот — <b>Enter</b> или клик</small>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <a href="{{ url_for('create_instruction') }}" class="mc-btn green" style="width: 210px;">Новый крафт</a>
+        <a href="{{ url_for('import_web') }}" class="mc-btn" style="width: 210px;">Импорт по ссылке</a>
+    </div>
+</div>
+
+<form method="GET" action="{{ url_for('inventory') }}" class="filter-bar">
+    <input type="text" name="q" class="mc-input" placeholder="Поиск по названию, материалам, инструментам, этапам..." value="{{ q }}" maxlength="100">
+    <select name="category_id" class="mc-select">
+        <option value="">Все категории</option>
+        <option value="none" {% if cat_filter == 'none' %}selected{% endif %}>Без категории</option>
+        {% for c in categories %}
+            <option value="{{ c.id }}" {% if cat_filter == c.id|string %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+    </select>
+    <select name="tag_id" class="mc-select">
+        <option value="">Все теги (#)</option>
+        {% for t in tags %}
+            <option value="{{ t.id }}" {% if tag_filter == t.id|string %}selected{% endif %}>#{{ t.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="mc-btn mc-btn-filter">Найти</button>
+    <a href="{{ url_for('inventory') }}" class="mc-btn mc-btn-filter">Сброс</a>
+</form>
+
+{% if instructions|length == 0 %}
+    <div style="background:#a8a8a8; border:3px solid #444; padding:24px; text-align:center; margin-bottom:16px;">
+        <h3 style="font-size:28px; margin-bottom:8px;">Инструкции не найдены</h3>
+        <p style="margin-bottom:14px;">В вашем инвентаре пока пусто или по вашему запросу ничего не найдено.</p>
+        <a href="{{ url_for('create_instruction') }}" class="mc-btn green">Создать первый крафт</a>
+    </div>
+{% endif %}
+
+<div class="inventory-grid" id="inventory-grid">
+    {% for inst in instructions %}
+        {% set done, total, pct = inst.progress %}
+        <a href="{{ url_for('view_instruction', inst_id=inst.id) }}"
+           class="slot"
+           data-filled="1"
+           data-href="{{ url_for('view_instruction', inst_id=inst.id) }}"
+           data-title="{{ inst.title }}"
+           data-cat="{{ inst.category.name if inst.category else 'Без категории' }}"
+           data-prog="{{ pct }}"
+           data-desc="{{ inst.description or 'Нажмите для открытия инструкции' }}">
+            {% if inst.cover_photo %}
+                <img src="{{ url_for('serve_photo', photo_id=inst.cover_photo.id) }}" alt="Обложка">
+            {% else %}
+                <div class="slot-icon-placeholder">DIY</div>
+            {% endif %}
+            <div class="slot-title">{{ inst.title }}</div>
+            <div class="slot-progress" title="Прогресс: {{ done }}/{{ total }}">
+                <div class="slot-progress-bar" style="width: {{ pct }}%;"></div>
+            </div>
+        </a>
+    {% endfor %}
+
+    {% for _ in range(empty_slots) %}
+        <div class="slot" data-filled="0"></div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Верхняя панель с кнопками строго одного размера -->
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="{{ url_for('inventory') }}" class="mc-btn mc-btn-equal">← Назад в инвентарь</a>
+        <a href="{{ url_for('read_instruction', inst_id=inst.id) }}" class="mc-btn green mc-btn-equal">Пошаговый режим чтения</a>
+    </div>
+    <form method="POST" action="{{ url_for('delete_instruction', inst_id=inst.id) }}" onsubmit="return confirm('Удалить инструкцию «{{ inst.title }}» и все её этапы и фотографии? Справочники сохранятся.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="mc-btn red mc-btn-equal">Удалить инструкцию</button>
+    </form>
+</div>
+
+{% set done, total, pct = inst.progress %}
+<div style="display:grid; grid-template-columns: 260px minmax(0, 1fr); gap:20px; background:#b0b0b0; padding:16px; border:3px solid #333; margin-bottom:20px;">
+    <div style="min-width:0;">
+        {% if inst.cover_photo %}
+            <img src="{{ url_for('serve_photo', photo_id=inst.cover_photo.id) }}" style="width:100%; border:3px solid #000; display:block;" alt="Обложка">
+        {% else %}
+            <div style="height:180px; background:#666; color:#fff; display:flex; align-items:center; justify-content:center; font-family:'VT323',monospace; font-size:32px; border:3px solid #000;">БЕЗ ОБЛОЖКИ</div>
+        {% endif %}
+        <div class="progress-outer">
+            <div class="progress-inner" style="width:{{ pct }}%;"></div>
+            <div class="progress-label">Прогресс: {{ done }} / {{ total }} ({{ pct }}%)</div>
+        </div>
+    </div>
+    <div style="min-width:0;">
+        <h1 style="font-size:40px; margin-bottom:6px; word-break:break-word;">{{ inst.title }}</h1>
+        <p style="margin-bottom:8px;">
+            <b>Категория:</b> <span class="badge">{{ inst.category.name if inst.category else 'Без категории' }}</span>
+            {% for t in inst.tags %}
+                <a href="{{ url_for('inventory', tag_id=t.id) }}" class="badge" style="background:#1f4e78; text-decoration:none; cursor:pointer;" title="Нажмите, чтобы найти все инструкции с тегом #{{ t.name }}">#{{ t.name }}</a>
+            {% endfor %}
+        </p>
+        <p style="white-space:pre-wrap; background:#dcdcdc; padding:12px; border:2px solid #555; min-height:70px; word-break:break-word;">{{ inst.description or 'Описание не указано.' }}</p>
+
+        <details style="margin-top:12px;">
+            <summary class="mc-btn" style="font-size:20px; width:100%;">Изменить название / категорию / обложку</summary>
+            <form method="POST" enctype="multipart/form-data" style="margin-top:10px; background:#a0a0a0; padding:14px; border:2px solid #333; width:100%;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="form_type" value="update_meta">
+                <input type="text" name="title" class="mc-input" value="{{ inst.title }}" maxlength="120" required>
+                <select name="category_id" class="mc-select">
+                    <option value="">Без категории</option>
+                    {% for c in categories %}
+                        <option value="{{ c.id }}" {% if inst.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+                <textarea name="description" class="mc-textarea" rows="3" maxlength="5000">{{ inst.description or '' }}</textarea>
+                <label style="display:block; margin-bottom:4px;">Заменить обложку (JPEG/PNG до 5 МБ):</label>
+                <input type="file" name="cover_photo" class="mc-input" accept="image/jpeg,image/png">
+                <button type="submit" class="mc-btn green" style="width:240px;">Сохранить изменения</button>
+            </form>
+        </details>
+    </div>
+</div>
+
+<!-- Система вкладок (Табы верстака) -->
+<div class="craft-tabs-container">
+    <div class="craft-tab-buttons">
+        <button type="button" class="mc-btn craft-tab-btn active-tab" data-tab="materials" onclick="switchCraftTab('materials')">
+            Материалы ({{ inst.material_links|length }})
+        </button>
+        <button type="button" class="mc-btn craft-tab-btn" data-tab="tools" onclick="switchCraftTab('tools')">
+            Инструменты ({{ inst.tools|length }})
+        </button>
+        <button type="button" class="mc-btn craft-tab-btn" data-tab="tags" onclick="switchCraftTab('tags')">
+            Теги ({{ inst.tags|length }})
+        </button>
+    </div>
+
+    <!-- Вкладка 1: Материалы -->
+    <div id="tab-materials" class="craft-tab-pane active-pane">
+        <div class="resource-chip-list">
+            {% for link in inst.material_links %}
+                <div class="resource-chip">
+                    <span><b>{{ link.material.name }}</b> — {{ link.quantity }} {{ link.unit }}</span>
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="form_type" value="remove_material">
+                        <input type="hidden" name="material_id" value="{{ link.material.id }}">
+                        <button type="submit" class="mc-btn red" style="height:28px; min-height:28px; padding:0 8px; font-size:16px;">X</button>
+                    </form>
+                </div>
+            {% else %}
+                <p style="color:#444;">Материалы к этой инструкции ещё не привязаны.</p>
+            {% endfor %}
+        </div>
+
+        <form method="POST" style="display:grid; grid-template-columns: 2fr 1fr 1fr 250px; gap:10px; align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="form_type" value="add_material">
+            <input type="text" name="material_name" list="mat-list" class="mc-input" style="margin:0;" placeholder="Название (напр. Саморез 3×30)" maxlength="100" required>
+            <datalist id="mat-list">
+                {% for m in all_materials %}<option value="{{ m.name }}">{% endfor %}
+            </datalist>
+            <input type="number" step="0.01" min="0.01" name="quantity" class="mc-input" style="margin:0;" placeholder="Количество" required>
+            <select name="unit" class="mc-select" style="margin:0;">
+                {% for u in units %}<option value="{{ u }}">{{ u }}</option>{% endfor %}
+            </select>
+            <button type="submit" class="mc-btn green" style="width:100%;">Добавить материал</button>
+        </form>
+    </div>
+
+    <!-- Вкладка 2: Инструменты -->
+    <div id="tab-tools" class="craft-tab-pane">
+        <div class="resource-chip-list">
+            {% for tool in inst.tools %}
+                <div class="resource-chip">
+                    <span><b>{{ tool.name }}</b></span>
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="form_type" value="remove_tool">
+                        <input type="hidden" name="tool_id" value="{{ tool.id }}">
+                        <button type="submit" class="mc-btn red" style="height:28px; min-height:28px; padding:0 8px; font-size:16px;">X</button>
+                    </form>
+                </div>
+            {% else %}
+                <p style="color:#444;">Инструменты ещё не указаны.</p>
+            {% endfor %}
+        </div>
+
+        <form method="POST" style="display:grid; grid-template-columns: 1fr 240px; gap:10px; align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="form_type" value="add_tool">
+            <input type="text" name="tool_name" list="tool-list" class="mc-input" style="margin:0;" placeholder="Название инструмента (напр. Паяльник)" maxlength="100" required>
+            <datalist id="tool-list">
+                {% for t in all_tools %}<option value="{{ t.name }}">{% endfor %}
+            </datalist>
+            <button type="submit" class="mc-btn green" style="width:100%;">Привязать инструмент</button>
+        </form>
+    </div>
+
+    <!-- Вкладка 3: Теги -->
+    <div id="tab-tags" class="craft-tab-pane">
+        <div class="resource-chip-list">
+            {% for tag in inst.tags %}
+                <form method="POST" style="display:inline-block; margin:2px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="form_type" value="remove_tag">
+                    <input type="hidden" name="tag_id" value="{{ tag.id }}">
+                    <button type="submit" class="mc-btn blue" style="height:36px; min-height:36px; font-size:18px; padding:0 12px;" title="Удалить тег из этой инструкции">#{{ tag.name }} ✕</button>
+                </form>
+            {% else %}
+                <p style="color:#444;">Теги ещё не назначены. Введите метки ниже (например: крафт, пайка, сборка).</p>
+            {% endfor %}
+        </div>
+
+        <form method="POST" style="display:grid; grid-template-columns: 1fr 220px; gap:10px; align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="form_type" value="add_tag">
+            <input type="text" name="tag_name" list="tag-datalist" class="mc-input" style="margin:0;" placeholder="Метка (напр. крафт, пайка)" maxlength="30" required>
+            <datalist id="tag-datalist">
+                {% for at in all_tags|default([]) %}<option value="{{ at.name }}">{% endfor %}
+            </datalist>
+            <button type="submit" class="mc-btn green" style="width:100%;">Добавить тег</button>
+        </form>
+    </div>
+</div>
+
+<!-- Секция этапов -->
+<div style="background:#b8b8b8; padding:18px; border:3px solid #333;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+        <h2 style="font-size:32px; margin:0;">Этапы выполнения ({{ inst.steps|length }})</h2>
+        <button type="button" id="toggle-steps-btn" class="mc-btn" style="min-width: 210px;" onclick="toggleStepsSection()">Скрыть этапы</button>
+    </div>
+
+    <div id="steps-collapsible-body">
+        {% for step in inst.steps %}
+            <div id="step-card-{{ step.step_number }}" data-step-num="{{ step.step_number }}" style="background:#dcdcdc; border:2px solid #444; padding:12px; margin-bottom:10px; display:flex; justify-content:space-between; gap:16px; align-items:flex-start; scroll-margin-top:20px;">
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:24px; color:#1a1a1a; margin-bottom:6px;">
+                        <b>Этап {{ step.step_number }}</b>
+                        {% if step.is_completed %}<span style="color:#274e13;">[СДЕЛАНО]</span>{% endif %}
+                    </div>
+                    <p style="white-space:pre-wrap; word-break:break-word; margin-bottom:10px;">{{ step.text }}</p>
+
+                    {% if step.photos %}
+                        <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:10px;">
+                            {% for p in step.photos %}
+                                <div style="position:relative; display:inline-block; border:3px solid #000; background:#222;">
+                                    <a href="{{ url_for('serve_photo', photo_id=p.id) }}" target="_blank" title="Открыть в полном размере">
+                                        <img src="{{ url_for('serve_photo', photo_id=p.id) }}" style="max-width:340px; max-height:260px; object-fit:contain; display:block;" alt="Фото этапа {{ step.step_number }}">
+                                    </a>
+                                    <form method="POST" style="position:absolute; top:4px; right:4px; margin:0;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="form_type" value="delete_photo">
+                                        <input type="hidden" name="photo_id" value="{{ p.id }}">
+                                        <button type="submit" class="mc-btn red" style="height:26px; min-height:26px; padding:0 7px; font-size:16px;" title="Удалить фото">✕</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <details style="margin-top:6px;">
+                        <summary style="cursor:pointer; color:#1f4e78; font-size:19px;">+ Добавить фотографии к этому этапу</summary>
+                        <form method="POST" enctype="multipart/form-data" style="margin-top:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="form_type" value="add_step_photos_existing">
+                            <input type="hidden" name="step_id" value="{{ step.id }}">
+                            <input type="file" name="additional_photos" class="mc-input" accept="image/jpeg,image/png" multiple required style="margin:0; flex:1; min-width:220px;">
+                            <button type="submit" class="mc-btn green">Загрузить</button>
+                        </form>
+                    </details>
+                </div>
+
+                <!-- Кнопки управления порядком и удалением этапа -->
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    {% if not loop.first %}
+                        <form method="POST" style="margin:0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="form_type" value="move_step">
+                            <input type="hidden" name="step_id" value="{{ step.id }}">
+                            <input type="hidden" name="direction" value="up">
+                            <button type="submit" class="mc-btn" style="width:44px; padding:0;" title="Переместить выше">↑</button>
+                        </form>
+                    {% endif %}
+                    {% if not loop.last %}
+                        <form method="POST" style="margin:0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="form_type" value="move_step">
+                            <input type="hidden" name="step_id" value="{{ step.id }}">
+                            <input type="hidden" name="direction" value="down">
+                            <button type="submit" class="mc-btn" style="width:44px; padding:0;" title="Переместить ниже">↓</button>
+                        </form>
+                    {% endif %}
+                    <form method="POST" style="margin:0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="form_type" value="delete_step">
+                        <input type="hidden" name="step_id" value="{{ step.id }}">
+                        <button type="submit" class="mc-btn red" style="width:44px; padding:0;" title="Удалить этап">🗑</button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <p style="color:#444; margin-bottom:12px;">Этапы сборки ещё не добавлены.</p>
+        {% endfor %}
+
+        <form method="POST" enctype="multipart/form-data" style="margin-top:14px; background:#a0a0a0; padding:14px; border:2px solid #333; width:100%;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="form_type" value="add_step">
+            <h3 style="font-size:24px; margin-bottom:6px;">Добавить новый этап</h3>
+            <textarea name="step_text" class="mc-textarea" rows="3" maxlength="2000" required placeholder="Опишите конкретное действие на этом шаге (до 2000 символов)..."></textarea>
+
+            <label style="display:block; margin-bottom:4px;"><b>Фотографии этапа (JPEG/PNG до 5 МБ, можно выбрать сразу несколько):</b></label>
+            <input type="file" name="step_photos" class="mc-input" accept="image/jpeg,image/png" multiple>
+
+            <button type="submit" class="mc-btn green" style="min-width: 240px; padding: 6px 20px;">Добавить этап</button>
+        </form>
+    </div>
+</div>
+
+<!-- Правое компактное табло быстрой навигации по этапам сборки -->
+{% if inst.steps|length > 4 %}
+<div id="right-step-nav" class="right-step-nav">
+    <div style="color:#ffff55; font-size:15px; text-align:center; border-bottom:1px solid #555; padding-bottom:2px;">ЭТАПЫ</div>
+    {% for s in inst.steps %}
+        <button type="button" class="right-step-pill" data-step="{{ s.step_number }}" onclick="scrollToStepElement({{ s.step_number }})" title="Перейти к этапу №{{ s.step_number }}">
+            #{{ s.step_number }}
+        </button>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Плавающая кнопка быстрого возврата наверх страницы -->
+<button type="button" id="btn-scroll-top" class="mc-btn scroll-top-btn" onclick="scrollToTop()" title="Вернуться в начало страницы">
+    ▲
+</button>
+{% endblock %}

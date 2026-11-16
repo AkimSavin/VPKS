@@ -1,0 +1,1056 @@
+/* ==========================================================================
+Глобальный сброс и единый пиксельный шрифт VT323 для всего приложения
+========================================================================== */
+*, *::before, *::after {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+font-family: 'VT323', monospace;
+}
+
+html, body {
+width: 100%;
+height: 100%;
+min-height: 100vh;
+background-color: #000000 !important;
+color: #202020;
+font-family: 'VT323', monospace;
+font-size: 22px;
+line-height: 1.25;
+overflow-x: hidden;
+border: none !important;
+outline: none !important;
+}
+
+/* Скрытие системной полосы прокрутки для устранения белых полей браузера */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+width: 0px;
+height: 0px;
+background: transparent;
+}
+
+/* Резервный атмосферный градиент на случай отсутствия видео */
+.fallback-bg {
+position: fixed;
+inset: 0;
+background:
+radial-gradient(circle at 20% 78%, rgba(255, 115, 20, 0.25) 0%, transparent 45%),
+linear-gradient(180deg, #090b10 0%, #121722 60%, #07080c 100%);
+z-index: 0;
+pointer-events: none;
+}
+
+/* Фиксированный контейнер видеофона (гарантированно без белых полос и рамок) */
+.bg-video-wrap {
+position: fixed;
+inset: 0;
+width: 100%;
+height: 100%;
+overflow: hidden;
+background-color: #000000;
+z-index: 1;
+pointer-events: none;
+border: none !important;
+outline: none !important;
+}
+
+#bg-video {
+position: absolute;
+top: 50%;
+left: 50%;
+width: 100%;
+height: 100%;
+min-width: 100%;
+min-height: 100%;
+object-fit: cover;
+transform: translate(-50%, -50%) scale(1.14);
+transform-origin: center center;
+filter: brightness(0.58) contrast(1.05);
+border: none !important;
+outline: none !important;
+box-shadow: none !important;
+background-color: #000000;
+display: block;
+}
+
+.app-layer {
+position: relative;
+z-index: 10;
+min-height: 100vh;
+width: 100%;
+display: flex;
+flex-direction: column;
+}
+
+h1, h2, h3, h4, .pixel-font {
+font-family: 'VT323', monospace;
+letter-spacing: 1px;
+font-weight: normal;
+}
+
+/* ==========================================================================
+Кнопки в стиле Minecraft (объемная 3D-фаска)
+========================================================================== */
+.mc-btn {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 6px;
+min-height: 44px;
+height: 44px;
+padding: 6px 20px;
+background-color: #727272;
+background-image: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.14) 100%);
+color: #ffffff;
+font-family: 'VT323', monospace;
+font-size: 22px;
+text-decoration: none;
+text-shadow: 2px 2px 0 #242424;
+border-top: 3px solid #b5b5b5;
+border-left: 3px solid #b5b5b5;
+border-right: 3px solid #303030;
+border-bottom: 3px solid #303030;
+outline: 2px solid #000000;
+cursor: pointer;
+user-select: none;
+text-align: center;
+white-space: nowrap;
+transition: background-color 0.08s ease, color 0.08s ease;
+}
+
+.mc-btn:hover {
+background-color: #878787;
+color: #ffffa0;
+border-top-color: #ffffff;
+border-left-color: #ffffff;
+}
+
+.mc-btn:active {
+border-top: 3px solid #303030;
+border-left: 3px solid #303030;
+border-right: 3px solid #b5b5b5;
+border-bottom: 3px solid #b5b5b5;
+transform: translateY(1px);
+}
+
+.mc-btn.green {
+background-color: #3c8527;
+border-top-color: #6bc349;
+border-left-color: #6bc349;
+border-right-color: #1e4613;
+border-bottom-color: #1e4613;
+}
+.mc-btn.green:hover {
+background-color: #4aa032;
+color: #ffffa0;
+}
+
+.mc-btn.red {
+background-color: #9e2828;
+border-top-color: #d65454;
+border-left-color: #d65454;
+border-right-color: #4f1111;
+border-bottom-color: #4f1111;
+}
+.mc-btn.red:hover {
+background-color: #b83232;
+color: #ffffa0;
+}
+
+.mc-btn.blue {
+background-color: #2e5c9a;
+border-top-color: #6395d9;
+border-left-color: #6395d9;
+border-right-color: #162f52;
+border-bottom-color: #162f52;
+}
+.mc-btn.blue:hover {
+background-color: #3b71ba;
+color: #ffffa0;
+}
+
+.mc-btn-equal {
+min-width: 280px;
+padding: 6px 22px;
+height: 44px;
+}
+
+.mc-btn-filter {
+width: 125px;
+height: 44px;
+}
+
+/* Подсветка активной страницы в боковом меню */
+.active-nav-btn {
+border-top-color: #ffff55 !important;
+border-left-color: #ffff55 !important;
+border-right-color: #6a5300 !important;
+border-bottom-color: #6a5300 !important;
+color: #ffff55 !important;
+background-color: #4c4c4c !important;
+box-shadow: inset 0 0 8px rgba(255, 255, 85, 0.3);
+}
+
+/* ==========================================================================
+Кнопка звука в правом верхнем углу
+========================================================================== */
+.side-sound-btn {
+position: fixed;
+top: 20px;
+right: 20px;
+z-index: 300;
+min-width: 155px;
+height: 44px;
+}
+
+/* ==========================================================================
+Шторка: затемняющий фон, золотой ярлычок и группировка
+========================================================================== */
+.authenticated-layout {
+display: flex;
+min-height: 100vh;
+width: 100%;
+position: relative;
+}
+
+/* Затемняющая вуаль поверх фона */
+.sidebar-backdrop {
+position: fixed;
+inset: 0;
+background: rgba(0, 0, 0, 0.45);
+backdrop-filter: blur(4px);
+-webkit-backdrop-filter: blur(4px);
+z-index: 180;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.22s ease;
+}
+
+.sidebar-backdrop.active {
+opacity: 1;
+pointer-events: auto;
+}
+
+/* Золотистый ярлычок со скруглением и 3D-фаской */
+.drawer-toggle-btn {
+position: fixed;
+top: 50%;
+left: 0;
+transform: translateY(-50%);
+z-index: 250;
+width: 38px;
+min-width: 38px;
+height: 64px;
+padding: 0;
+font-size: 34px;
+line-height: 60px;
+border-radius: 0 16px 16px 0;
+touch-action: none;
+user-select: none;
+cursor: grab;
+transition: left 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), background-color 0.1s ease;
+background-color: #d4a017 !important;
+color: #ffffff !important;
+text-shadow: 2px 2px 0 #5c4202 !important;
+border-top: 3px solid #ffe970 !important;
+border-right: 3px solid #634600 !important;
+border-bottom: 3px solid #634600 !important;
+border-left: none !important;
+outline: 2px solid #000000;
+}
+
+.drawer-toggle-btn:hover {
+background-color: #e5b329 !important;
+color: #ffffa0 !important;
+}
+
+.drawer-toggle-btn:active {
+cursor: grabbing;
+}
+
+.drawer-toggle-btn.shifted {
+left: 270px;
+}
+
+.left-sidebar {
+width: 270px;
+min-width: 270px;
+background: rgba(16, 18, 24, 0.72);
+backdrop-filter: blur(14px);
+-webkit-backdrop-filter: blur(14px);
+border-right: 3px solid rgba(255, 255, 255, 0.22);
+border-radius: 0 20px 20px 0;
+box-shadow: 6px 0 26px rgba(0, 0, 0, 0.75);
+padding: 24px 14px 20px 14px;
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+position: fixed;
+top: 0;
+left: 0;
+height: 100vh;
+z-index: 200;
+overflow-y: auto;
+touch-action: none;
+user-select: none;
+transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+will-change: transform;
+}
+
+.left-sidebar.collapsed {
+transform: translateX(-100%);
+}
+
+.left-sidebar.dragging,
+.drawer-toggle-btn.dragging {
+transition: none !important;
+}
+
+/* Аккуратные подзаголовки блоков меню */
+.sidebar-group-title {
+font-size: 16px;
+color: #9a9a9a;
+text-transform: uppercase;
+letter-spacing: 2px;
+margin-bottom: 4px;
+padding-left: 4px;
+border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+padding-bottom: 2px;
+}
+
+.sidebar-top,
+.sidebar-bottom {
+display: flex;
+flex-direction: column;
+gap: 8px;
+width: 100%;
+}
+
+.sidebar-btn {
+width: 100% !important;
+height: 44px !important;
+font-size: 22px;
+}
+
+/* ==========================================================================
+Центрирование окон
+========================================================================== */
+.main-workspace {
+flex: 1;
+width: 100%;
+min-height: 100vh;
+padding: 32px 76px;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+min-width: 0;
+}
+
+.main-workspace.no-top-pad {
+padding: 24px;
+}
+
+.mc-panel {
+width: 100%;
+max-width: 1160px;
+margin: auto;
+background-color: #c6c6c6;
+border: 4px solid #000000;
+box-shadow:
+inset -4px -4px 0px #555555,
+inset 4px 4px 0px #ffffff,
+0 14px 36px rgba(0, 0, 0, 0.78);
+padding: 26px 30px;
+color: #1e1e1e;
+overflow: hidden;
+}
+
+/* ==========================================================================
+Окно входа и регистрации
+========================================================================== */
+.login-screen-center {
+min-height: 100vh;
+width: 100%;
+display: flex;
+justify-content: center;
+align-items: center;
+padding: 20px;
+}
+
+.login-wrapper {
+width: 440px;
+min-height: 440px;
+background-color: rgba(12, 12, 16, 0.80);
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+padding: 28px 32px;
+border: 4px solid #000000;
+box-shadow:
+inset -4px -4px 0px #3a3a3a,
+inset 4px 4px 0px #8e8e8e,
+0 16px 40px rgba(0, 0, 0, 0.85);
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+align-items: center;
+}
+
+.mc-title {
+color: #ffffff;
+text-shadow: 4px 4px 0 #2e2e2e;
+font-size: 46px;
+margin: 0 0 4px 0;
+text-align: center;
+letter-spacing: 2px;
+}
+
+.mc-subtitle {
+color: #ffff55;
+text-shadow: 2px 2px 0 #222222;
+font-size: 20px;
+margin-bottom: 10px;
+text-align: center;
+}
+
+.gost-mark {
+color: #cccccc;
+font-size: 18px;
+text-shadow: 1px 1px 0 #000000;
+text-align: center;
+}
+
+/* ==========================================================================
+Главное меню
+========================================================================== */
+.game-menu-box {
+width: 100%;
+max-width: 540px;
+margin: auto;
+background: rgba(12, 12, 16, 0.78);
+backdrop-filter: blur(8px);
+border: 4px solid #000;
+box-shadow:
+inset -4px -4px 0 #3a3a3a,
+inset 4px 4px 0 #8e8e8e,
+0 16px 42px rgba(0,0,0,0.85);
+padding: 34px 38px;
+text-align: center;
+}
+
+.game-menu-title {
+font-size: 54px;
+color: #ffffff;
+text-shadow: 4px 4px 0 #2a2a2a;
+margin-bottom: 6px;
+}
+
+.game-menu-sub {
+font-size: 22px;
+color: #ffff55;
+text-shadow: 2px 2px 0 #000;
+margin-bottom: 24px;
+}
+
+.game-menu-buttons {
+display: flex;
+flex-direction: column;
+gap: 14px;
+width: 100%;
+}
+
+.game-menu-btn {
+width: 100% !important;
+height: 50px !important;
+font-size: 26px !important;
+}
+
+/* ==========================================================================
+Поля ввода и глазок пароля
+========================================================================== */
+.mc-input,
+.mc-select,
+.mc-textarea {
+width: 100%;
+max-width: 100%;
+min-height: 44px;
+padding: 8px 12px;
+background-color: #111111;
+color: #ffffff;
+border-top: 3px solid #373737;
+border-left: 3px solid #373737;
+border-right: 3px solid #ffffff;
+border-bottom: 3px solid #ffffff;
+font-family: 'VT323', monospace;
+font-size: 22px;
+margin-bottom: 12px;
+outline: none;
+display: block;
+}
+
+.mc-input::placeholder,
+.mc-textarea::placeholder {
+color: #9a9a9a;
+}
+
+.mc-input:focus,
+.mc-select:focus,
+.mc-textarea:focus {
+border-color: #ffff55;
+background-color: #1a1a1a;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="text"]::-ms-reveal,
+input[type="text"]::-ms-clear {
+display: none !important;
+}
+
+.password-field-wrap {
+position: relative;
+width: 100%;
+margin-bottom: 12px;
+}
+
+.password-field-wrap .password-input {
+margin-bottom: 0;
+padding-right: 48px !important;
+}
+
+.password-eye-btn {
+position: absolute;
+top: 50%;
+right: 8px;
+transform: translateY(-50%);
+width: 34px;
+height: 34px;
+background: transparent;
+border: none;
+color: #ffffff;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 0;
+z-index: 5;
+opacity: 0.9;
+}
+
+.password-eye-btn:hover {
+opacity: 1;
+filter: drop-shadow(0 0 4px #ffff55);
+}
+
+/* ==========================================================================
+Фильтры инвентаря
+========================================================================== */
+.filter-bar {
+display: grid;
+grid-template-columns: minmax(200px, 2fr) minmax(150px, 1fr) minmax(150px, 1fr) 125px 125px;
+gap: 10px;
+align-items: center;
+background: #a6a6a6;
+padding: 12px;
+border: 3px solid #373737;
+margin-bottom: 18px;
+width: 100%;
+}
+
+.filter-bar .mc-input,
+.filter-bar .mc-select {
+margin-bottom: 0 !important;
+height: 44px;
+}
+
+/* ==========================================================================
+Вкладки верстака
+========================================================================== */
+.craft-tabs-container {
+background: #b0b0b0;
+border: 3px solid #333333;
+padding: 16px;
+margin-bottom: 20px;
+width: 100%;
+}
+
+.craft-tab-buttons {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 10px;
+margin-bottom: 14px;
+}
+
+.craft-tab-btn {
+width: 100%;
+height: 44px;
+}
+
+.craft-tab-btn.active-tab {
+background-color: #3c8527;
+border-top-color: #6bc349;
+border-left-color: #6bc349;
+color: #ffffa0;
+}
+
+.craft-tab-pane {
+display: none;
+background: #dcdcdc;
+border: 3px solid #555555;
+padding: 16px;
+width: 100%;
+}
+
+.craft-tab-pane.active-pane {
+display: block;
+}
+
+.resource-chip-list {
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+margin-bottom: 14px;
+}
+
+.resource-chip {
+display: inline-flex;
+align-items: center;
+gap: 10px;
+background: #c6c6c6;
+border: 2px solid #373737;
+padding: 6px 12px;
+font-size: 20px;
+}
+
+/* ==========================================================================
+Окно «Как пользоваться»
+========================================================================== */
+.onboarding-backdrop {
+position: fixed;
+inset: 0;
+background: rgba(0, 0, 0, 0.78);
+z-index: 999;
+display: none;
+justify-content: center;
+align-items: center;
+padding: 20px;
+}
+
+.onboarding-modal {
+width: 100%;
+max-width: 720px;
+background: #c6c6c6;
+border: 4px solid #000;
+box-shadow:
+inset -4px -4px 0 #555,
+inset 4px 4px 0 #fff,
+0 18px 46px rgba(0,0,0,0.9);
+padding: 26px 30px;
+color: #1e1e1e;
+}
+
+.onboarding-steps {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 12px;
+margin: 16px 0;
+}
+
+.onboarding-step-card {
+background: #dcdcdc;
+border: 3px solid #373737;
+padding: 12px;
+}
+
+.onboarding-step-card h4 {
+font-size: 24px;
+color: #1f4e78;
+margin-bottom: 4px;
+}
+
+/* ==========================================================================
+Сетка инвентаря
+========================================================================== */
+.inventory-grid {
+display: grid;
+grid-template-columns: repeat(9, 1fr);
+gap: 8px;
+background-color: #8b8b8b;
+padding: 12px;
+border-top: 4px solid #373737;
+border-left: 4px solid #373737;
+border-right: 4px solid #ffffff;
+border-bottom: 4px solid #ffffff;
+}
+
+.slot {
+aspect-ratio: 1 / 1;
+min-height: 84px;
+background-color: #8b8b8b;
+border-top: 3px solid #373737;
+border-left: 3px solid #373737;
+border-right: 3px solid #ffffff;
+border-bottom: 3px solid #ffffff;
+position: relative;
+cursor: pointer;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 6px;
+overflow: hidden;
+text-decoration: none;
+color: #ffffff;
+}
+
+.slot.selected,
+.slot:hover {
+background-color: #a8a8a8;
+outline: 3px solid #ffff55;
+z-index: 4;
+}
+
+.slot img {
+width: 100%;
+height: 68%;
+object-fit: cover;
+image-rendering: pixelated;
+border: 1px solid #222222;
+}
+
+.slot-icon-placeholder {
+width: 52px;
+height: 52px;
+background: #5e5e5e;
+border: 2px solid #2b2b2b;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 24px;
+color: #ffffa0;
+text-shadow: 2px 2px 0 #000000;
+}
+
+.slot-title {
+font-size: 17px;
+color: #ffffff;
+text-shadow: 1px 1px 0 #000000;
+text-align: center;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+width: 100%;
+margin-top: 4px;
+}
+
+.slot-progress {
+position: absolute;
+bottom: 3px;
+left: 5px;
+right: 5px;
+height: 6px;
+background: #1a1a1a;
+border: 1px solid #000000;
+}
+
+.slot-progress-bar {
+height: 100%;
+background: #55ff55;
+}
+
+/* ==========================================================================
+Всплывающая подсказка
+========================================================================== */
+.mc-tooltip {
+position: fixed;
+background: rgba(16, 0, 16, 0.96);
+border: 3px solid #5000ff;
+box-shadow: 0 6px 18px rgba(0, 0, 0, 0.8);
+color: #ffffff;
+padding: 12px 16px;
+pointer-events: none;
+z-index: 999;
+width: 310px;
+display: none;
+}
+
+.mc-tooltip h4 {
+color: #ffff55;
+font-size: 24px;
+margin-bottom: 4px;
+}
+
+.mc-tooltip .tt-cat {
+color: #55ffff;
+font-size: 18px;
+margin-bottom: 6px;
+}
+
+.mc-tooltip p {
+color: #dddddd;
+font-size: 18px;
+}
+
+/* ==========================================================================
+Сообщения Flash и индикатор прогресса
+========================================================================== */
+.flash-box {
+padding: 10px 14px;
+margin-bottom: 14px;
+border: 3px solid #000000;
+font-size: 20px;
+}
+.flash-error {
+background: #f4cccc;
+color: #660000;
+border-color: #990000;
+}
+.flash-success {
+background: #d9ead3;
+color: #1b4d11;
+border-color: #274e13;
+}
+
+.progress-outer {
+width: 100%;
+height: 30px;
+background: #222222;
+border: 3px solid #000000;
+position: relative;
+margin: 10px 0;
+}
+
+.progress-inner {
+height: 100%;
+background: linear-gradient(90deg, #38761d, #6aa84f);
+transition: width 0.25s ease;
+}
+
+.progress-label {
+position: absolute;
+inset: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+color: #ffffff;
+font-size: 20px;
+text-shadow: 1px 1px 0 #000000;
+}
+
+/* ==========================================================================
+Таблицы и бейджи
+========================================================================== */
+.mc-table {
+width: 100%;
+border-collapse: collapse;
+margin-top: 10px;
+background: #dedede;
+}
+
+.mc-table th,
+.mc-table td {
+border: 2px solid #4a4a4a;
+padding: 8px 10px;
+text-align: left;
+font-size: 20px;
+}
+
+.mc-table th {
+background: #8b8b8b;
+color: #ffffff;
+text-shadow: 1px 1px 0 #000000;
+font-size: 22px;
+}
+
+.badge {
+display: inline-block;
+padding: 2px 8px;
+background: #3d3d3d;
+color: #ffff55;
+border: 2px solid #000000;
+font-size: 18px;
+margin-right: 4px;
+margin-bottom: 4px;
+}
+
+/* ==========================================================================
+Окно загрузки крафта (импорт URL / PDF / JSON)
+========================================================================== */
+.craft-loading-overlay {
+position: fixed;
+inset: 0;
+background: rgba(0, 0, 0, 0.82);
+backdrop-filter: blur(4px);
+-webkit-backdrop-filter: blur(4px);
+z-index: 1200;
+display: none;
+justify-content: center;
+align-items: center;
+padding: 20px;
+}
+
+.craft-loading-overlay.active {
+display: flex;
+}
+
+.craft-loading-box {
+width: 100%;
+max-width: 480px;
+background: #c6c6c6;
+border: 4px solid #000000;
+box-shadow:
+inset -4px -4px 0 #555555,
+inset 4px 4px 0 #ffffff,
+0 18px 46px rgba(0, 0, 0, 0.92);
+padding: 28px 32px;
+text-align: center;
+color: #1e1e1e;
+}
+
+.pixel-spinner {
+width: 48px;
+height: 48px;
+margin: 0 auto 16px auto;
+background-color: #3c8527;
+border-top: 4px solid #6bc349;
+border-left: 4px solid #6bc349;
+border-right: 4px solid #1e4613;
+border-bottom: 4px solid #1e4613;
+outline: 3px solid #000000;
+animation: mcBlockSpin 1.1s steps(4) infinite;
+}
+
+@keyframes mcBlockSpin {
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+Правая навигационная панель этапов и кнопка «Наверх ↑»
+========================================================================== */
+.right-step-nav {
+position: fixed;
+right: 16px;
+top: 50%;
+transform: translateY(-50%);
+z-index: 220;
+background: rgba(16, 18, 24, 0.78);
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+border: 2px solid rgba(255, 255, 255, 0.25);
+padding: 8px 6px;
+max-height: 68vh;
+overflow-y: auto;
+display: flex;
+flex-direction: column;
+gap: 5px;
+width: 56px;
+box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
+}
+
+.right-step-nav::-webkit-scrollbar {
+width: 4px;
+}
+.right-step-nav::-webkit-scrollbar-thumb {
+background: #8b8b8b;
+}
+
+.right-step-pill {
+display: block;
+width: 100%;
+padding: 4px 2px;
+background: #4b4b4b;
+color: #ffffff;
+border: 2px solid #000000;
+text-align: center;
+text-decoration: none;
+font-size: 17px;
+cursor: pointer;
+}
+
+.right-step-pill:hover,
+.right-step-pill.active {
+background: #d4a017;
+color: #000000;
+border-color: #ffff55;
+}
+
+.scroll-top-btn {
+position: fixed;
+right: 16px;
+bottom: 22px;
+z-index: 240;
+min-width: 56px;
+width: 56px;
+height: 46px;
+padding: 0;
+font-size: 24px;
+display: none;
+}
+
+.scroll-top-btn.visible {
+display: inline-flex;
+}
+
+/* ==========================================================================
+Компактный 1-строчный селектор шагов в пошаговом режиме чтения
+========================================================================== */
+.compact-step-bar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+background: #a6a6a6;
+border: 3px solid #373737;
+padding: 8px 12px;
+margin-bottom: 14px;
+flex-wrap: wrap;
+}
+
+.step-dropdown-grid {
+display: none;
+grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+gap: 6px;
+background: #8b8b8b;
+border: 3px solid #373737;
+padding: 10px;
+margin-bottom: 16px;
+max-height: 220px;
+overflow-y: auto;
+}
+
+.step-dropdown-grid.open {
+display: grid;
+}
+
+.compact-step-bar,
+.reader-step-bar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+background: #a6a6a6;
+border: 3px solid #373737;
+padding: 10px 14px;
+margin: 16px 0;
+flex-wrap: wrap;
+}
+
+.step-dropdown-grid,
+.reader-steps-drawer {
+display: none;
+flex-wrap: wrap;
+gap: 6px;
+background: #8b8b8b;
+border: 3px solid #373737;
+padding: 10px;
+margin-bottom: 16px;
+max-height: 210px;
+overflow-y: auto;
+}
+
+.step-dropdown-grid.open,
+.reader-steps-drawer.expanded {
+display: flex;
+}

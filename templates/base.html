@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Мои DIY-инструкции</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="fallback-bg"></div>
+    <div class="bg-video-wrap">
+        <video autoplay loop muted playsinline id="bg-video" key="{{ bg_video|default('campfire.mp4') }}">
+            {% if bg_video %}
+                <source src="{{ url_for('static', filename=bg_video) }}" type="video/mp4">
+            {% endif %}
+            <source src="{{ url_for('static', filename='campfire.mp4') }}" type="video/mp4">
+            <source src="{{ url_for('static', filename='campfire_hd.mp4') }}" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- Фоновая непрерывная музыка -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="{{ url_for('static', filename='music.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <div class="app-layer" id="app-layer">
+        {% if session.get('user_id') %}
+            <!-- Кнопка звука в правом верхнем углу -->
+            <button type="button" class="mc-btn side-sound-btn sound-toggle-btn" onclick="toggleSound()">Звук: ВКЛ</button>
+
+            <div class="authenticated-layout">
+                {% if request.endpoint != 'main_menu' %}
+                    <!-- Золотистый ярлычок шторки со скругленными углами и шевроном -->
+                    <button type="button" id="drawer-toggle-btn" class="mc-btn drawer-toggle-btn" title="Потяните или нажмите, чтобы открыть меню">›</button>
+
+                    <!-- Затемняющая вуаль (клик закрывает шторку) -->
+                    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebarDrawer()"></div>
+
+                    <!-- Выдвижная шторка, сгруппированная по трем смысловым блокам -->
+                    <aside id="left-sidebar" class="left-sidebar collapsed">
+                        <div class="sidebar-top">
+                            <!-- БЛОК 1: НАВИГАЦИЯ -->
+                            <div class="sidebar-group-title">Навигация</div>
+                            <a href="{{ url_for('main_menu') }}" class="mc-btn sidebar-btn {{ 'active-nav-btn' if request.endpoint == 'main_menu' else '' }}">Главное меню</a>
+                            <a href="{{ url_for('create_instruction') }}" class="mc-btn green sidebar-btn {{ 'active-nav-btn' if request.endpoint == 'create_instruction' else '' }}">Новый крафт</a>
+                            <a href="{{ url_for('inventory') }}" class="mc-btn sidebar-btn {{ 'active-nav-btn' if request.endpoint in ('inventory', 'view_instruction', 'read_instruction') else '' }}">Инвентарь</a>
+
+                            <!-- БЛОК 2: МАСТЕРСКАЯ -->
+                            <div class="sidebar-group-title" style="margin-top: 10px;">Мастерская</div>
+                            <a href="{{ url_for('categories_view') }}" class="mc-btn sidebar-btn {{ 'active-nav-btn' if request.endpoint == 'categories_view' else '' }}">Категории</a>
+                            <a href="{{ url_for('catalogs_view') }}" class="mc-btn sidebar-btn {{ 'active-nav-btn' if request.endpoint == 'catalogs_view' else '' }}">Справочники</a>
+                            <a href="{{ url_for('recommendations_view') }}" class="mc-btn blue sidebar-btn {{ 'active-nav-btn' if request.endpoint == 'recommendations_view' else '' }}">Подбор и Закупки</a>
+                        </div>
+
+                        <!-- БЛОК 3: СИСТЕМА -->
+                        <div class="sidebar-bottom">
+                            <div class="sidebar-group-title">Система</div>
+                            <a href="{{ url_for('import_web') }}" class="mc-btn sidebar-btn {{ 'active-nav-btn' if request.endpoint == 'import_web' else '' }}">Импорт с сайта</a>
+                            <button type="button" class="mc-btn sidebar-btn" onclick="openOnboardingModal()">Как пользоваться</button>
+                            <form method="POST" action="{{ url_for('logout') }}" style="width:100%; margin:0;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="mc-btn red sidebar-btn">Выход</button>
+                            </form>
+                        </div>
+                    </aside>
+                {% endif %}
+
+                <!-- Основная рабочая область страницы -->
+                <main class="main-workspace {{ 'no-top-pad' if request.endpoint == 'main_menu' else '' }}">
+                    {% block full_workspace %}
+                        <div class="mc-panel">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, msg in messages %}
+                                        <div class="flash-box {{ 'flash-error' if category == 'error' else 'flash-success' }}">
+                                            {{ msg }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+
+                            {% block content %}{% endblock %}
+                        </div>
+                    {% endblock %}
+                </main>
+            </div>
+
+            <!-- Окно «Руководство по использованию программы» -->
+            <div id="onboarding-backdrop"
+                 class="onboarding-backdrop"
+                 data-just-logged="{{ 'true' if just_logged else 'false' }}"
+                 data-just-registered="{{ 'true' if just_registered else 'false' }}">
+                <div class="onboarding-modal">
+                    <h2 style="font-size: 36px; margin-bottom: 6px;">Руководство по использованию программы</h2>
+                    <p style="font-size: 20px; color: #333;">Последовательность действий для создания вашей DIY-инструкции:</p>
+
+                    <div class="onboarding-steps">
+                        <div class="onboarding-step-card">
+                            <h4>Шаг 1. Новый крафт</h4>
+                            <p>Нажмите <b>«Новый крафт»</b>, введите название проекта, выберите категорию и загрузите фото обложки.</p>
+                        </div>
+                        <div class="onboarding-step-card">
+                            <h4>Шаг 2. Ресурсы</h4>
+                            <p>В открывшейся карточке укажите необходимые <b>Материалы</b> (с количеством), <b>Инструменты</b> и <b>Теги</b>.</p>
+                        </div>
+                        <div class="onboarding-step-card">
+                            <h4>Шаг 3. Этапы сборки</h4>
+                            <p>Добавьте пошаговые <b>Этапы</b> с фотографиями процесса, чтобы ничего не забыть во время работы.</p>
+                        </div>
+                        <div class="onboarding-step-card">
+                            <h4>Шаг 4. Режим чтения</h4>
+                            <p>Запустите <b>«Пошаговый режим чтения»</b> и нажимайте <b>«Сделано»</b> на каждом шаге!</p>
+                        </div>
+                    </div>
+
+                    <div style="background: #dcdcdc; border: 3px solid #373737; padding: 10px 14px; margin-bottom: 18px; font-size: 19px;">
+                        <b>Боковая шторка навигации:</b> левая панель меню спрятана по умолчанию. Вы можете <b>перетягивать её мышкой</b> вправо/влево или нажать на золотистый ярлычок <b>«›»</b> у левого края экрана.
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; gap: 12px;">
+                        <button type="button" class="mc-btn" style="flex: 1;" onclick="closeOnboardingModal(true)">Больше не показывать</button>
+                        <button type="button" class="mc-btn green" style="flex: 1;" onclick="closeOnboardingModal(false)">Идём дальше</button>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="login-screen-center">
+                {% block auth_content %}{% endblock %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div id="mc-tooltip" class="mc-tooltip">
+        <h4 id="tt-title"></h4>
+        <div class="tt-cat" id="tt-cat"></div>
+        <p id="tt-desc"></p>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

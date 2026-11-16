@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <h1 style="font-size:36px;">Личные справочники материалов и инструментов</h1>
+    <a href="{{ url_for('inventory') }}" class="mc-btn" style="width:200px;">← В инвентарь</a>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:20px;">
+    <div style="background:#b4b4b4; padding:16px; border:3px solid #333; min-width:0;">
+        <h2 style="font-size:30px; margin-bottom:10px;">Справочник материалов</h2>
+        <form method="POST" style="display:grid; grid-template-columns: 1fr 140px; gap:8px; margin-bottom:14px; align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="add_mat">
+            <input type="text" name="name" class="mc-input" placeholder="Новый материал..." maxlength="100" required style="margin:0;">
+            <button type="submit" class="mc-btn green" style="width:100%;">Добавить</button>
+        </form>
+        <table class="mc-table">
+            <thead><tr><th>Название</th><th>В крафтах</th><th>Удаление</th></tr></thead>
+            <tbody>
+                {% for m in materials %}
+                <tr>
+                    <td><b>{{ m.name }}</b></td>
+                    <td>{{ m.instruction_links|length }} шт.</td>
+                    <td>
+                        <form method="POST" onsubmit="return confirm('Удалить материал из справочника?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="action" value="del_mat">
+                            <input type="hidden" name="id" value="{{ m.id }}">
+                            <button type="submit" class="mc-btn red" style="width:46px; padding:0;">X</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3">Справочник материалов пуст</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="background:#b4b4b4; padding:16px; border:3px solid #333; min-width:0;">
+        <h2 style="font-size:30px; margin-bottom:10px;">Справочник инструментов</h2>
+        <form method="POST" style="display:grid; grid-template-columns: 1fr 140px; gap:8px; margin-bottom:14px; align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="add_tool">
+            <input type="text" name="name" class="mc-input" placeholder="Новый инструмент..." maxlength="100" required style="margin:0;">
+            <button type="submit" class="mc-btn green" style="width:100%;">Добавить</button>
+        </form>
+        <table class="mc-table">
+            <thead><tr><th>Название</th><th>В крафтах</th><th>Удаление</th></tr></thead>
+            <tbody>
+                {% for t in tools %}
+                <tr>
+                    <td><b>{{ t.name }}</b></td>
+                    <td>{{ t.instructions|length }} шт.</td>
+                    <td>
+                        <form method="POST" onsubmit="return confirm('Удалить инструмент из справочника?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="action" value="del_tool">
+                            <input type="hidden" name="id" value="{{ t.id }}">
+                            <button type="submit" class="mc-btn red" style="width:46px; padding:0;">X</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3">Справочник инструментов пуст</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

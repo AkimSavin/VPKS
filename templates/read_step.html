@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <a href="{{ url_for('view_instruction', inst_id=inst.id) }}" class="mc-btn">← К карточке инструкции</a>
+    <form method="POST" onsubmit="return confirm('Сбросить весь прогресс по этой инструкции?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="reset_progress">
+        <button type="submit" class="mc-btn red">Сбросить прогресс</button>
+    </form>
+</div>
+
+{% set done, total, pct = inst.progress %}
+<h1 style="font-size:38px;">Пошаговая сборка: {{ inst.title }}</h1>
+<div class="progress-outer">
+    <div class="progress-inner" style="width:{{ pct }}%;"></div>
+    <div class="progress-label">Выполнено этапов: {{ done }} из {{ total }} ({{ pct }}%)</div>
+</div>
+
+<!-- Компактная 1-строчная панель навигации по шагам -->
+<div class="reader-step-bar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#a6a6a6; border:3px solid #373737; padding:10px 14px; margin:16px 0;">
+    <div style="display:flex; align-items:center; gap:8px;">
+        {% if current_step.step_number > 1 %}
+            <a href="{{ url_for('read_instruction', inst_id=inst.id, step=current_step.step_number - 1) }}" class="mc-btn" style="min-width:110px;">◀ Назад</a>
+        {% else %}
+            <button class="mc-btn" style="min-width:110px; opacity:0.5; cursor:not-allowed;" disabled>◀ Назад</button>
+        {% endif %}
+
+        <span style="font-size:24px; font-weight:bold; color:#111;">
+            Шаг {{ current_step.step_number }} из {{ total }}
+        </span>
+
+        {% if current_step.step_number < total %}
+            <a href="{{ url_for('read_instruction', inst_id=inst.id, step=current_step.step_number + 1) }}" class="mc-btn" style="min-width:110px;">Вперёд ▶</a>
+        {% endif %}
+    </div>
+
+    <!-- Кнопка разворачивания полного списка шагов с отступами сверху и снизу -->
+    <button type="button" id="toggle-reader-steps-btn" class="mc-btn" style="min-width:230px; margin:6px 0;" onclick="toggleReaderStepDrawer()">
+        Выбрать любой шаг ▼
+    </button>
+</div>
+
+<!-- Скрытый по умолчанию раскрывающийся блок с маленькими кнопками шагов -->
+<div id="reader-steps-drawer" class="reader-steps-drawer" style="display:none; flex-wrap:wrap; gap:6px; background:#8b8b8b; border:3px solid #373737; padding:10px; margin-bottom:16px; max-height:210px; overflow-y:auto;">
+    {% for s in steps %}
+        <a href="{{ url_for('read_instruction', inst_id=inst.id, step=s.step_number) }}"
+           class="mc-btn {{ 'green' if s.is_completed else '' }}"
+           style="{{ 'outline:3px solid #ffff55;' if s.id == current_step.id else '' }} min-width:44px; width:44px; height:34px; min-height:34px; padding:0; font-size:18px;">
+            {{ s.step_number }}
+        </a>
+    {% endfor %}
+</div>
+
+<div style="background:#ededed; border:4px solid #222; padding:28px; margin-top:10px;">
+    <h2 style="font-size:36px; margin-bottom:14px; color:#111;">
+        Этап {{ current_step.step_number }} из {{ total }}
+        {% if current_step.is_completed %}<span style="color:#38761d;">(Выполнено)</span>{% endif %}
+    </h2>
+    <div style="font-size:24px; line-height:1.4; white-space:pre-wrap; margin-bottom:24px; color:#111;">{{ current_step.text }}</div>
+
+    {% for p in current_step.photos %}
+        <div style="margin-bottom:20px;">
+            <img src="{{ url_for('serve_photo', photo_id=p.id) }}" style="max-width:100%; max-height:460px; border:3px solid #000;" alt="Фото этапа">
+        </div>
+    {% endfor %}
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+        {% if not current_step.is_completed %}
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="mark_done">
+                <input type="hidden" name="step_id" value="{{ current_step.id }}">
+                <button type="submit" class="mc-btn green" style="font-size:30px; padding:12px 36px;">СДЕЛАНО (Следующий шаг)</button>
+            </form>
+        {% else %}
+            <div style="font-size:28px; color:#38761d;">Этот этап уже отмечен выполненным!</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block auth_content %}
+<div class="login-wrapper">
+    <div>
+        <h1 class="mc-title">Мои DIY-инструкции</h1>
+        <div class="mc-subtitle">Личная цифровая библиотека крафта</div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div style="width: 100%;">
+                {% for category, msg in messages %}
+                    <div class="flash-box {{ 'flash-error' if category == 'error' else 'flash-success' }}" style="padding: 6px 10px; margin-bottom: 6px; font-size: 13px;">
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}" style="width: 100%;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <input type="email" name="email" class="mc-input" placeholder="E-mail (alexey@diy.local)" value="{{ email_val }}" required autocomplete="off">
+
+        <div class="password-field-wrap">
+            <input type="password" id="login-password-input" name="password" class="mc-input password-input" placeholder="Пароль (не менее 8 символов)" minlength="8" required>
+            <button type="button" class="password-eye-btn" onclick="togglePasswordVisibility('login-password-input', this)" title="Показать / скрыть пароль" aria-label="Показать пароль">
+                <svg class="eye-icon-open" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                    <circle cx="12" cy="12" r="3" fill="#ffffff"/>
+                </svg>
+                <svg class="eye-icon-closed" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="display:none;">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-7-11-7a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+            </button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+            <button type="submit" name="action" value="login" class="mc-btn green" style="width:100%; height:44px; font-size:24px;">Войти в систему</button>
+            <button type="submit" name="action" value="register" class="mc-btn" style="width:100%; height:44px; font-size:24px;">Создать аккаунт</button>
+        </div>
+    </form>
+
+    <div class="gost-mark">Тестовый вход: alexey@diy.local / password123</div>
+</div>
+{% endblock %}
